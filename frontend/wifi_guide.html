@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi连接引导 - 投票抽奖系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .step {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 32px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .step-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .wifi-info {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .wifi-field {
+            margin-bottom: 15px;
+        }
+        
+        .wifi-field:last-child {
+            margin-bottom: 0;
+        }
+        
+        .wifi-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .wifi-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            font-family: 'Consolas', monospace;
+            word-break: break-all;
+        }
+        
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        .copy-btn:active {
+            background: #5568d3;
+        }
+        
+        .auto-redirect {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .countdown {
+            font-size: 48px;
+            font-weight: bold;
+            color: #28a745;
+            margin: 10px 0;
+        }
+        
+        .manual-link {
+            display: block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+            transition: transform 0.3s;
+        }
+        
+        .manual-link:hover {
+            transform: translateY(-2px);
+        }
+        
+        .tip {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .connected {
+            display: none;
+        }
+        
+        .connected.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 连接WiFi并投票</h1>
+            <p>请按照以下步骤操作</p>
+        </div>
+        
+        <!-- 步骤1：连接WiFi -->
+        <div class="step">
+            <div class="step-title">
+                <span class="step-number">1</span>
+                连接WiFi
+            </div>
+            <div class="wifi-info">
+                <div class="wifi-field">
+                    <div class="wifi-label">📶 WiFi名称（SSID）</div>
+                    <div class="wifi-value" id="wifiSSID">投票抽奖系统</div>
+                </div>
+                <div class="wifi-field">
+                    <div class="wifi-label">🔑 WiFi密码</div>
+                    <div class="wifi-value" id="wifiPassword">
+                        ••••••••
+                        <button class="copy-btn" onclick="showPassword()">显示</button>
+                        <button class="copy-btn" onclick="copyPassword()" id="copyBtn" style="display:none;">复制</button>
+                    </div>
+                </div>
+            </div>
+            <div class="tip">
+                💡 <strong>提示：</strong>打开手机WiFi设置，找到"投票抽奖系统"，输入密码连接
+            </div>
+        </div>
+        
+        <!-- 步骤2：访问投票页面（未连接时显示） -->
+        <div class="step" id="notConnected">
+            <div class="step-title">
+                <span class="step-number">2</span>
+                连接成功后
+            </div>
+            <p style="color: #666; margin-top: 10px;">
+                连接WiFi成功后，此页面将自动刷新并跳转到投票页面
+            </p>
+        </div>
+        
+        <!-- 已连接WiFi时显示 -->
+        <div class="connected" id="connected">
+            <div class="auto-redirect">
+                <div style="font-size: 18px; color: #28a745; margin-bottom: 10px;">
+                    ✅ 已连接WiFi
+                </div>
+                <div style="font-size: 16px; color: #666;">
+                    即将跳转到投票页面
+                </div>
+                <div class="countdown" id="countdown">3</div>
+                <div style="font-size: 14px; color: #999;">
+                    秒后自动跳转
+                </div>
+            </div>
+            
+            <a href="/vote" class="manual-link">
+                🗳️ 点此立即进入投票页面
+            </a>
+        </div>
+    </div>
+    
+    <script>
+        // 从URL参数获取WiFi密码
+        const urlParams = new URLSearchParams(window.location.search);
+        const password = urlParams.get('password') || '12345678';
+        const ssid = urlParams.get('ssid') || '投票抽奖系统';
+        
+        document.getElementById('wifiSSID').textContent = ssid;
+        
+        let passwordShown = false;
+        
+        // 显示密码
+        function showPassword() {
+            const passwordEl = document.getElementById('wifiPassword');
+            const copyBtn = document.getElementById('copyBtn');
+            
+            if (!passwordShown) {
+                passwordEl.innerHTML = `${password} <button class="copy-btn" onclick="hidePassword()">隐藏</button> <button class="copy-btn" onclick="copyPassword()">复制</button>`;
+                passwordShown = true;
+            }
+        }
+        
+        // 隐藏密码
+        function hidePassword() {
+            const passwordEl = document.getElementById('wifiPassword');
+            passwordEl.innerHTML = `•••••••• <button class="copy-btn" onclick="showPassword()">显示</button>`;
+            passwordShown = false;
+        }
+        
+        // 复制密码
+        function copyPassword() {
+            navigator.clipboard.writeText(password).then(() => {
+                alert('密码已复制：' + password);
+            }).catch(() => {
+                // 备用方案
+                const tempInput = document.createElement('input');
+                tempInput.value = password;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                alert('密码已复制：' + password);
+            });
+        }
+        
+        // 检测是否已连接WiFi
+        function checkConnection() {
+            // 检测是否连接到热点IP段
+            fetch('/api/admin/hotspot/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data.running) {
+                        // 已连接WiFi热点
+                        showConnected();
+                    } else {
+                        // 未连接，5秒后重试
+                        setTimeout(checkConnection, 5000);
+                    }
+                })
+                .catch(() => {
+                    // 请求失败可能表示未连接，继续重试
+                    setTimeout(checkConnection, 5000);
+                });
+        }
+        
+        // 显示已连接状态并倒计时
+        function showConnected() {
+            document.getElementById('notConnected').style.display = 'none';
+            document.getElementById('connected').classList.add('show');
+            
+            let count = 3;
+            const countdownEl = document.getElementById('countdown');
+            
+            const timer = setInterval(() => {
+                count--;
+                countdownEl.textContent = count;
+                
+                if (count <= 0) {
+                    clearInterval(timer);
+                    window.location.href = '/vote';
+                }
+            }, 1000);
+        }
+        
+        // 启动连接检测
+        setTimeout(checkConnection, 2000);
+    </script>
+    
+    <!-- 版权信息 -->
+    <div style="text-align: center; padding: 20px; color: #666; font-size: 12px; margin-top: 20px;">
+        <p>© 2025 开发者赵宏宇版权所有</p>
+    </div>
+</body>
+</html>

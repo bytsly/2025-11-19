@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">投票抽奖系统 - 首页</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            text-align: center;
+            color: white;
+        }
+        
+        h1#main-title {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            margin-bottom: 50px;
+            opacity: 0.9;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .button-row {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav-button {
+            display: inline-block;
+            padding: 20px 50px;
+            font-size: 20px;
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            border-radius: 50px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .nav-button.admin {
+            background: rgba(255, 107, 107, 0.3);
+            border-color: #ff6b6b;
+        }
+        
+        .nav-button.admin:hover {
+            background: rgba(255, 107, 107, 0.5);
+        }
+        
+        .qrcode-section {
+            margin-top: 50px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .qrcode-section h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .qrcode-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .qrcode-container img {
+            max-width: 250px;
+            width: 100%;
+            height: auto;
+        }
+        
+        .qrcode-url {
+            font-size: 14px;
+            word-break: break-all;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .qrcode-button {
+            padding: 12px 30px;
+            font-size: 16px;
+            color: white;
+            background: rgba(255, 255, 255, 0.25);
+            border: 2px solid white;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .qrcode-button:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-2px);
+        }
+        
+        .loading {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            opacity: 0.7;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="main-title">🎉 投票抽奖系统</h1>
+        <p class="subtitle">专业的投票与抽奖管理平台</p>
+        
+        <div class="button-group">
+            <div class="button-row">
+                <a href="/vote" class="nav-button">🗳️ 投票页面</a>
+                <a href="/lottery" class="nav-button">🎁 抽奖系统</a>
+            </div>
+            <div class="button-row">
+                <a href="/admin" class="nav-button admin">📊 管理后台</a>
+            </div>
+        </div>
+        
+        <!-- 二维码区域 -->
+        <div class="qrcode-section">
+            <h2>📱 扫码参与投票</h2>
+            
+            <!-- 模式选择 -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 10px; font-size: 14px;">
+                    <input type="radio" name="qrMode" value="combo" checked onchange="updateQRMode()">
+                    🔗 WiFi + 投票双二维码
+                </label>
+                <label style="display: block; font-size: 14px;">
+                    <input type="radio" name="qrMode" value="vote" onchange="updateQRMode()">
+                    🗳️ 仅投票页面
+                </label>
+            </div>
+            
+            <!-- WiFi密码输入(WiFi模式时显示) -->
+            <div id="wifiPasswordInput" class="form-group" style="display:block; margin-bottom: 15px;">
+                <input type="password" id="hotspotPassword" placeholder="请输入WiFi热点密码" 
+                       style="width: 100%; padding: 10px; border: 2px solid white; border-radius: 8px; 
+                              background: rgba(255,255,255,0.2); color: white; font-size: 14px;"
+                       value="12345678">
+                <small style="display: block; margin-top: 5px; opacity: 0.8;">需要WiFi热点密码才能生成连接二维码</small>
+            </div>
+            
+            <!-- 双二维码显示 -->
+            <div id="comboQRDisplay" style="display:none;">
+                <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px;">
+                    <!-- WiFi二维码 -->
+                    <div style="text-align: center; flex: 1; min-width: 200px; max-width: 300px;">
+                        <div style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 12px; border-radius: 12px 12px 0 0; font-weight: bold;">
+                            ① 连接WiFi
+                        </div>
+                        <div style="background: white; padding: 15px; border: 3px solid #4CAF50; border-top: none;">
+                            <img id="comboWiFiImg" src="" alt="WiFi二维码" style="width: 100%; max-width: 200px;">
+                        </div>
+                        <div style="background: #f5f5f5; padding: 10px; border-radius: 0 0 12px 12px; font-size: 13px; color: #333;" id="wifiInfo">
+                            WiFi: 投票抽奖系统
+                        </div>
+                    </div>
+                    
+                    <!-- 箭头 -->
+                    <div style="display: flex; align-items: center; font-size: 36px; color: rgba(255,255,255,0.8);">
+                        ➡️
+                    </div>
+                    
+                    <!-- 投票二维码 -->
+                    <div style="text-align: center; flex: 1; min-width: 200px; max-width: 300px;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px; border-radius: 12px 12px 0 0; font-weight: bold;">
+                            ② 参与投票
+                        </div>
+                        <div style="background: white; padding: 15px; border: 3px solid #667eea; border-top: none;">
+                            <img id="comboVoteImg" src="" alt="投票二维码" style="width: 100%; max-width: 200px;">
+                        </div>
+                        <div style="background: #f5f5f5; padding: 10px; border-radius: 0 0 12px 12px; font-size: 13px; color: #333;" id="voteInfo">
+                            打开投票页面
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 使用说明 -->
+                <div style="background: rgba(255, 243, 205, 0.3); border: 2px solid rgba(255, 193, 7, 0.5); border-radius: 12px; padding: 15px; margin-top: 15px;">
+                    <div style="font-weight: bold; margin-bottom: 10px; font-size: 15px;">📝 使用说明：</div>
+                    <div style="font-size: 14px; line-height: 1.8;">
+                        <div>1️⃣ 用手机相机扫描<strong>左侧二维码</strong>，点击连接WiFi</div>
+                        <div>2️⃣ 连接成功后，扫描<strong>右侧二维码</strong>打开投票页面</div>
+                        <div style="margin-top: 8px; font-size: 12px; opacity: 0.9;">💡 支持 Android 10+ / iOS 11+ 设备</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 单个二维码显示 -->
+            <div id="qrcodeDisplay" class="qrcode-container" style="display:none;">
+                <img id="qrcodeImg" src="" alt="二维码">
+                <div style="margin-top: 10px; font-size: 14px; color: #333;" id="qrcodeTip"></div>
+            </div>
+            
+            <div class="qrcode-url" id="qrcodeUrl" style="display:none;"></div>
+            
+            <button class="qrcode-button" onclick="generateQRCode()" id="generateBtn">
+                生成二维码
+            </button>
+            <div class="loading" id="loadingText" style="display:none;">正在生成...</div>
+            <div class="loading" id="errorText" style="display:none; color: #ff6b6b;"></div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>投票抽奖系统 v1.0 | Powered by Python + Flask</p>
+    </div>
+    
+    <script>
+        // 当前模式：combo / vote
+        let currentMode = 'combo';
+        
+        // 切换二维码模式
+        function updateQRMode() {
+            const selectedMode = document.querySelector('input[name="qrMode"]:checked').value;
+            currentMode = selectedMode;
+            
+            const wifiPasswordInput = document.getElementById('wifiPasswordInput');
+            const qrcodeDisplay = document.getElementById('qrcodeDisplay');
+            const comboQRDisplay = document.getElementById('comboQRDisplay');
+            const qrcodeUrl = document.getElementById('qrcodeUrl');
+            
+            // 根据模式显示/隐藏密码输入
+            if (selectedMode === 'combo') {
+                wifiPasswordInput.style.display = 'block';
+            } else {
+                wifiPasswordInput.style.display = 'none';
+            }
+            
+            // 清空之前的二维码
+            qrcodeDisplay.style.display = 'none';
+            comboQRDisplay.style.display = 'none';
+            qrcodeUrl.style.display = 'none';
+        }
+        
+        // 生成二维码
+        function generateQRCode() {
+            const generateBtn = document.getElementById('generateBtn');
+            const loadingText = document.getElementById('loadingText');
+            const errorText = document.getElementById('errorText');
+            const qrcodeDisplay = document.getElementById('qrcodeDisplay');
+            const comboQRDisplay = document.getElementById('comboQRDisplay');
+            const qrcodeUrl = document.getElementById('qrcodeUrl');
+            const qrcodeImg = document.getElementById('qrcodeImg');
+            const qrcodeTip = document.getElementById('qrcodeTip');
+            
+            // 隐藏错误信息
+            errorText.style.display = 'none';
+            
+            // 显示加载状态
+            generateBtn.style.display = 'none';
+            loadingText.style.display = 'block';
+            
+            let apiUrl = '';
+            
+            if (currentMode === 'combo') {
+                // 组合模式：生成WiFi+投票双二维码
+                const password = document.getElementById('hotspotPassword').value.trim();
+                if (!password) {
+                    errorText.textContent = '请输入WiFi热点密码！';
+                    errorText.style.display = 'block';
+                    generateBtn.style.display = 'block';
+                    loadingText.style.display = 'none';
+                    return;
+                }
+                apiUrl = `/api/admin/qrcode/wifi-vote?password=${encodeURIComponent(password)}`;
+            } else {
+                // 投票模式：仅生成投票二维码
+                apiUrl = '/api/admin/qrcode/vote';
+            }
+            
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (currentMode === 'combo') {
+                            // 显示组合二维码
+                            document.getElementById('comboWiFiImg').src = `data:image/png;base64,${data.data.wifi_qrcode}`;
+                            document.getElementById('comboVoteImg').src = `data:image/png;base64,${data.data.vote_qrcode}`;
+                            document.getElementById('wifiInfo').textContent = data.data.wifi_info || 'WiFi: 投票抽奖系统';
+                            document.getElementById('voteInfo').textContent = data.data.vote_info || '打开投票页面';
+                            comboQRDisplay.style.display = 'block';
+                            qrcodeDisplay.style.display = 'none';
+                            qrcodeUrl.style.display = 'none';
+                        } else {
+                            // 显示单个二维码
+                            qrcodeImg.src = `data:image/png;base64,${data.data.qrcode}`;
+                            qrcodeDisplay.style.display = 'block';
+                            comboQRDisplay.style.display = 'none';
+                            
+                            // 显示提示信息
+                            qrcodeTip.innerHTML = '🗳️ 扫描此二维码访问投票页面';
+                            qrcodeUrl.textContent = data.data.url;
+                            
+                            qrcodeUrl.style.display = 'block';
+                        }
+                        
+                        loadingText.style.display = 'none';
+                    } else {
+                        errorText.textContent = '生成失败：' + (data.message || '未知错误');
+                        errorText.style.display = 'block';
+                        generateBtn.style.display = 'block';
+                        loadingText.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('请求失败:', error);
+                    errorText.textContent = '生成失败，请检查服务器状态和网络连接';
+                    errorText.style.display = 'block';
+                    generateBtn.style.display = 'block';
+                    loadingText.style.display = 'none';
+                });
+        }
+        
+        // 页面加载完成后自动生成二维码（可选）
+        // window.addEventListener('load', generateQRCode);
+    </script>
+    <script>
+        // 获取投票配置
+        async function loadVoteConfig() {
+            try {
+                const response = await fetch('/api/vote/config');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch vote config');
+                }
+                const config = await response.json();
+                
+                // 更新页面标题和主标题
+                if (config.vote_name && config.vote_name.trim()) {
+                    document.getElementById('page-title').textContent = config.vote_name + ' - 首页';
+                    document.getElementById('main-title').textContent = config.vote_name;
+                }
+            } catch (error) {
+                console.error('Error loading vote config:', error);
+            }
+        }
+        
+        // 页面加载完成后获取投票配置
+        window.addEventListener('DOMContentLoaded', loadVoteConfig);
+    </script>
+</body>
+</html>

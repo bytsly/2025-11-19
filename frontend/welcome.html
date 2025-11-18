@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title id="page-title">欢迎使用投票抽奖系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            text-align: center;
+            color: white;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .logo {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: bounce 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes bounce {
+            from { transform: translateY(0px); }
+            to { transform: translateY(-10px); }
+        }
+        
+        h1 {
+            font-size: 36px;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+        
+        .info-box {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .wifi-info {
+            font-size: 16px;
+            line-height: 2;
+            margin-bottom: 20px;
+        }
+        
+        .wifi-info strong {
+            color: #ffd700;
+        }
+        
+        .countdown {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 215, 0, 0.2);
+            border-radius: 10px;
+            border: 2px solid #ffd700;
+        }
+        
+        .countdown span {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffd700;
+            display: inline-block;
+            animation: pulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .nav-button {
+            display: block;
+            padding: 18px 40px;
+            font-size: 18px;
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            border-radius: 50px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-button:active {
+            transform: scale(0.95);
+        }
+        
+        .nav-button.primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .nav-button.secondary {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
+        .tips {
+            margin-top: 30px;
+            font-size: 14px;
+            opacity: 0.8;
+            line-height: 1.8;
+        }
+        
+        .tips-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #ffd700;
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 28px;
+            }
+            
+            .logo {
+                font-size: 60px;
+            }
+            
+            .subtitle {
+                font-size: 16px;
+            }
+            
+            .nav-button {
+                font-size: 16px;
+                padding: 15px 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🎉</div>
+        <h1 id="welcome-title">欢迎连接投票抽奖系统</h1>
+        <p class="subtitle">WiFi连接成功！</p>
+        
+        <div class="info-box">
+            <div class="wifi-info">
+                <div>✓ 已连接WiFi: <strong id="wifiName">投票抽奖系统</strong></div>
+                <div>✓ 网络状态: <strong>已连接</strong></div>
+            </div>
+            
+            <div class="countdown">
+                <span id="countdown">3</span> 秒后自动进入系统首页...
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <a href="/" class="nav-button primary" id="homeBtn">
+                🏠 进入系统首页
+            </a>
+            
+            <a href="/vote" class="nav-button secondary">
+                🗳️ 开始投票
+            </a>
+            
+            <a href="/lottery" class="nav-button secondary">
+                🎁 查看抽奖
+            </a>
+        </div>
+        
+        <div class="tips">
+            <div class="tips-title">📱 使用提示</div>
+            <div>• 保持手机与WiFi连接状态</div>
+            <div>• 建议使用浏览器访问</div>
+            <div>• 如有问题请联系现场工作人员</div>
+        </div>
+    </div>
+    
+    <script>
+        // 自动跳转倒计时
+        let countdown = 3;
+        const countdownElement = document.getElementById('countdown');
+        const homeBtn = document.getElementById('homeBtn');
+        
+        // 获取URL参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const autoRedirect = urlParams.get('auto') !== 'false';
+        
+        console.log('=== 欢迎页面加载 ===');
+        console.log('自动跳转:', autoRedirect);
+        console.log('当前路径:', window.location.href);
+        
+        if (autoRedirect) {
+            console.log('开始3秒倒计时...');
+            
+            const timer = setInterval(() => {
+                countdown--;
+                countdownElement.textContent = countdown;
+                console.log(`倒计时: ${countdown}秒`);
+                
+                if (countdown <= 0) {
+                    clearInterval(timer);
+                    console.log('倒计时结束，即将跳转...');
+                    
+                    // 多种跳转方式，确保成功
+                    try {
+                        window.location.href = '/';
+                    } catch (e) {
+                        console.error('跳转失败:', e);
+                        // 备用方案
+                        window.location.replace('/');
+                    }
+                }
+            }, 1000);
+            
+            // 点击按钮停止倒计时
+            homeBtn.addEventListener('click', (e) => {
+                console.log('用户点击按钮，停止自动跳转');
+                clearInterval(timer);
+            });
+            
+            // 页面可见性检测 - 页面隐藏时暂停倒计时
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    console.log('页面隐藏，暂停倒计时');
+                    clearInterval(timer);
+                }
+            });
+        } else {
+            // 不自动跳转时，隐藏倒计时
+            console.log('自动跳转已禁用');
+            document.querySelector('.countdown').style.display = 'none';
+        }
+        
+        // 尝试获取WiFi名称（如果有的话）
+        try {
+            if (navigator.connection && navigator.connection.effectiveType) {
+                console.log('网络类型:', navigator.connection.effectiveType);
+            }
+        } catch (e) {
+            console.log('无法获取网络信息');
+        }
+        
+        // 页面加载完成日志
+        console.log('欢迎页面初始化完成');
+    </script>
+    <script>
+        // 获取投票配置
+        async function loadVoteConfig() {
+            try {
+                const response = await fetch('/api/vote/config');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch vote config');
+                }
+                const config = await response.json();
+                
+                // 更新页面标题和欢迎标题
+                if (config.vote_name && config.vote_name.trim()) {
+                    document.getElementById('page-title').textContent = '欢迎使用 ' + config.vote_name;
+                    document.getElementById('welcome-title').textContent = '欢迎连接 ' + config.vote_name;
+                }
+            } catch (error) {
+                console.error('Error loading vote config:', error);
+            }
+        }
+        
+        // 页面加载完成后获取投票配置
+        window.addEventListener('DOMContentLoaded', loadVoteConfig);
+    </script>
+    
+    <!-- 版权信息 -->
+    <div style="text-align: center; padding: 20px; color: #666; font-size: 12px; margin-top: 20px;">
+        <p>© 2025 开发者赵宏宇版权所有</p>
+    </div>
+</body>
+</html>

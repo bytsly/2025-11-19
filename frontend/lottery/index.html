@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抽奖系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow: auto;
+        }
+        
+        .lottery-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .title {
+            font-size: 48px;
+            color: white;
+            text-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .prize-title {
+            font-size: 28px;
+            color: #FFD700;
+            text-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+        
+        .photo-display {
+            width: 400px;
+            height: 400px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .photo-display.spinning {
+            animation: spin 0.1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% {
+                transform: rotateY(0deg);
+            }
+            100% {
+                transform: rotateY(360deg);
+            }
+        }
+        
+        .candidate-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+        
+        .candidate-photo.active {
+            display: block;
+        }
+        
+        .placeholder {
+            font-size: 120px;
+            color: #ddd;
+        }
+        
+        .candidate-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+            font-size: 36px;
+            text-align: center;
+            padding: 20px;
+            font-weight: bold;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .lottery-button {
+            padding: 15px 40px;
+            font-size: 20px;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .lottery-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+        
+        .lottery-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .lottery-button.stop {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        }
+        
+        .winner-announcement {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .winner-announcement.show {
+            display: flex;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .winner-content {
+            text-align: center;
+            color: white;
+        }
+        
+        .winner-content h1 {
+            font-size: 80px;
+            margin-bottom: 30px;
+            animation: bounceIn 1s ease;
+        }
+        
+        .prize-name {
+            font-size: 48px;
+            color: #FFD700;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .winner-photo {
+            width: 400px;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 20px;
+            margin: 20px auto;
+            box-shadow: 0 20px 60px rgba(255,255,255,0.3);
+        }
+        
+        .winner-name {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 30px 0;
+            text-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+        
+        .close-announcement {
+            padding: 15px 50px;
+            font-size: 20px;
+            background: white;
+            color: #333;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 30px;
+        }
+        
+        .history-panel {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            max-height: 80vh;
+            overflow-y: auto;
+            min-width: 250px;
+        }
+        
+        .history-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f0f;
+            position: absolute;
+            animation: confetti-fall 3s linear;
+        }
+        
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .photo-display {
+                width: 80vw;
+                height: 80vw;
+                max-width: 300px;
+                max-height: 300px;
+            }
+            
+            .title {
+                font-size: 32px;
+                margin-bottom: 20px;
+            }
+            
+            .prize-title {
+                font-size: 20px;
+                margin-bottom: 15px;
+            }
+            
+            .candidate-name {
+                font-size: 24px;
+                padding: 15px;
+            }
+            
+            .lottery-button {
+                padding: 12px 30px;
+                font-size: 16px;
+            }
+            
+            .controls {
+                gap: 10px;
+            }
+            
+            .winner-content h1 {
+                font-size: 36px;
+                margin-bottom: 20px;
+            }
+            
+            .prize-name {
+                font-size: 24px;
+                margin-bottom: 15px;
+            }
+            
+            .winner-name {
+                font-size: 36px;
+                margin: 20px 0;
+            }
+            
+            .placeholder {
+                font-size: 80px;
+            }
+            
+            .history-panel {
+                display: none;
+            }
+            
+            .close-announcement {
+                padding: 12px 40px;
+                font-size: 18px;
+                margin-top: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+            
+            .photo-display {
+                width: 90vw;
+                height: 90vw;
+                max-width: 250px;
+                max-height: 250px;
+            }
+            
+            .title {
+                font-size: 28px;
+                margin-bottom: 15px;
+            }
+            
+            .prize-title {
+                font-size: 18px;
+                margin-bottom: 10px;
+            }
+            
+            .candidate-name {
+                font-size: 20px;
+                padding: 12px;
+            }
+            
+            .lottery-button {
+                padding: 10px 25px;
+                font-size: 14px;
+            }
+            
+            .controls {
+                gap: 8px;
+            }
+            
+            .winner-content h1 {
+                font-size: 28px;
+                margin-bottom: 15px;
+            }
+            
+            .prize-name {
+                font-size: 20px;
+                margin-bottom: 12px;
+            }
+            
+            .winner-name {
+                font-size: 28px;
+                margin: 15px 0;
+            }
+            
+            .winner-photo {
+                width: 250px;
+                height: 250px;
+            }
+            
+            .placeholder {
+                font-size: 60px;
+            }
+            
+            .close-announcement {
+                padding: 10px 30px;
+                font-size: 16px;
+                margin-top: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="lottery-container">
+        <h1 class="title">🎁 幸运抽奖</h1>
+        <h2 class="prize-title" id="prizeTitle">奖项: 幸运奖</h2>
+        
+        <div id="photoDisplay" class="photo-display">
+            <div class="placeholder">🎁</div>
+            <div id="candidateName" class="candidate-name" style="display:none;"></div>
+        </div>
+        
+        <div class="controls">
+            <button id="startButton" class="lottery-button" onclick="startLottery()">
+                🎰 开始抽奖
+            </button>
+            <button id="stopButton" class="lottery-button stop" onclick="stopLottery()" style="display:none;">
+                ⏹️ 停止
+            </button>
+        </div>
+    </div>
+    
+    <div id="winnerAnnouncement" class="winner-announcement">
+        <div class="winner-content">
+            <h1>🎉 恭喜中奖 🎉</h1>
+            <div class="prize-name" id="announcementPrizeName">幸运奖</div>
+            <img id="winnerPhoto" class="winner-photo" src="">
+            <div id="winnerName" class="winner-name"></div>
+            <button class="close-announcement" onclick="closeAnnouncement()">确定</button>
+        </div>
+    </div>
+    
+    <div class="history-panel" id="historyPanel">
+        <div class="history-title">🏆 中奖名单</div>
+        <div id="historyList">
+            <p style="text-align:center;color:#999;">暂无记录</p>
+        </div>
+    </div>
+    
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const API_BASE = '/api/lottery';
+        const ADMIN_API_BASE = '/api/admin';
+        let candidates = [];
+        let isSpinning = false;
+        let spinInterval = null;
+        let currentIndex = 0;
+        let lotterySettings = {
+            count: 1,
+            prizeName: '幸运奖',
+            excludeWinners: true,
+            rounds: 1,
+            completed_rounds: 0
+        };
+        let winners = []; // 存储多轮中奖者
+        
+        // WebSocket
+        const socket = io();
+        
+        socket.on('lottery_result', (data) => {
+            console.log('收到抽奖结果:', data);
+            loadHistory();
+        });
+        
+        // 获取抽奖设置
+        async function getLotterySettings() {
+            try {
+                const response = await fetch(`${ADMIN_API_BASE}/lottery/settings`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    lotterySettings = {...lotterySettings, ...result.data};
+                    // 更新页面显示的奖项名称
+                    document.getElementById('prizeTitle').textContent = `奖项: ${lotterySettings.prize_name}`;
+                    document.getElementById('announcementPrizeName').textContent = lotterySettings.prize_name;
+                    console.log('获取抽奖设置:', lotterySettings);
+                }
+            } catch (error) {
+                console.error('获取抽奖设置失败:', error);
+            }
+        }
+        
+        // 加载候选人
+        async function loadCandidates() {
+            try {
+                const response = await fetch(`${API_BASE}/candidates`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    candidates = result.data;
+                    console.log(`加载了 ${candidates.length} 个候选人`);
+                }
+            } catch (error) {
+                console.error('加载候选人失败:', error);
+            }
+        }
+        
+        // 加载历史记录
+        async function loadHistory() {
+            try {
+                const response = await fetch(`${API_BASE}/history`);
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    const historyList = document.getElementById('historyList');
+                    historyList.innerHTML = '';
+                    
+                    result.data.forEach((record, index) => {
+                        if (index < 20) { // 显示最近20条
+                            const item = document.createElement('div');
+                            item.className = 'history-item';
+                            item.innerHTML = `
+                                <strong>第${record.round}轮</strong><br>
+                                ${record.prize_name ? record.prize_name + ': ' : ''}
+                                ${record.candidate_name}
+                            `;
+                            historyList.appendChild(item);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('加载历史失败:', error);
+            }
+        }
+        
+        // 开始抽奖
+        function startLottery() {
+            // 检查是否还能继续抽奖
+            if (lotterySettings.completed_rounds >= lotterySettings.rounds) {
+                alert(`已达到最大抽奖轮数限制 (${lotterySettings.rounds}轮)，无法继续抽奖！`);
+                return;
+            }
+            
+            if (candidates.length === 0) {
+                alert('没有可抽奖的候选人！');
+                return;
+            }
+            
+            isSpinning = true;
+            document.getElementById('startButton').style.display = 'none';
+            document.getElementById('stopButton').style.display = 'block';
+            
+            const display = document.getElementById('photoDisplay');
+            display.classList.add('spinning');
+            
+            // 快速轮播
+            spinInterval = setInterval(() => {
+                showRandomCandidate();
+            }, 100);
+        }
+        
+        // 显示随机候选人
+        function showRandomCandidate() {
+            if (candidates.length === 0) return;
+            
+            currentIndex = Math.floor(Math.random() * candidates.length);
+            const candidate = candidates[currentIndex];
+            
+            const display = document.getElementById('photoDisplay');
+            const nameDiv = document.getElementById('candidateName');
+            
+            display.innerHTML = '';
+            
+            if (candidate.photo_path) {
+                const img = document.createElement('img');
+                img.src = candidate.photo_path;
+                img.className = 'candidate-photo active';
+                display.appendChild(img);
+            } else {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'placeholder';
+                placeholder.textContent = '👤';
+                display.appendChild(placeholder);
+            }
+            
+            nameDiv.textContent = candidate.name;
+            nameDiv.style.display = 'block';
+            display.appendChild(nameDiv);
+        }
+        
+        // 停止抽奖并执行实际抽奖逻辑
+        function stopLottery() {
+            if (!isSpinning) return;
+            
+            clearInterval(spinInterval);
+            isSpinning = false;
+            
+            const display = document.getElementById('photoDisplay');
+            display.classList.remove('spinning');
+            
+            document.getElementById('startButton').style.display = 'block';
+            document.getElementById('stopButton').style.display = 'none';
+            
+            // 执行实际抽奖（调用后端API）
+            performLottery();
+        }
+        
+        // 执行实际抽奖
+        async function performLottery() {
+            try {
+                // 检查是否还能继续抽奖
+                if (lotterySettings.completed_rounds >= lotterySettings.rounds) {
+                    alert(`已达到最大抽奖轮数限制 (${lotterySettings.rounds}轮)，无法继续抽奖！`);
+                    return;
+                }
+                
+                // 使用从后台获取的设置参数
+                const lotteryData = {
+                    count: 1, // 每次只抽1人
+                    prize_name: lotterySettings.prize_name,
+                    exclude_winners: lotterySettings.exclude_winners
+                };
+                
+                const response = await fetch(`${ADMIN_API_BASE}/lottery/draw`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(lotteryData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 显示中奖者
+                    const winner = result.data.winners[0]; // 只抽1人
+                    showWinner(winner, result.data.prize_name);
+                    createConfetti();
+                    
+                    // 保存中奖者到列表
+                    winners.push({
+                        round: result.data.round,
+                        prize_name: result.data.prize_name,
+                        winner: winner
+                    });
+                    
+                    // 更新已完成的轮数
+                    lotterySettings.completed_rounds += 1;
+                    
+                    // 更新历史记录
+                    loadHistory();
+                    
+                    // 通知其他客户端更新历史记录
+                    socket.emit('lottery_performed', result.data);
+                    
+                    // 检查是否达到最大轮数限制
+                    if (lotterySettings.completed_rounds >= lotterySettings.rounds) {
+                        setTimeout(() => {
+                            alert(`已完成所有抽奖轮数 (${lotterySettings.rounds}轮)，如需继续请重新设置轮数！`);
+                        }, 1000);
+                    }
+                } else {
+                    alert('抽奖失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('抽奖失败:', error);
+                alert('抽奖失败: ' + error.message);
+            }
+        }
+        
+        // 显示中奖者
+        function showWinner(winner, prizeName) {
+            const announcement = document.getElementById('winnerAnnouncement');
+            const winnerPhoto = document.getElementById('winnerPhoto');
+            const winnerName = document.getElementById('winnerName');
+            const announcementPrizeName = document.getElementById('announcementPrizeName');
+            
+            // 更新奖项名称
+            announcementPrizeName.textContent = prizeName;
+            
+            if (winner.photo_path) {
+                winnerPhoto.src = winner.photo_path;
+                winnerPhoto.style.display = 'block';
+            } else {
+                winnerPhoto.style.display = 'none';
+            }
+            
+            winnerName.textContent = winner.name;
+            announcement.classList.add('show');
+        }
+        
+        // 关闭公告
+        function closeAnnouncement() {
+            document.getElementById('winnerAnnouncement').classList.remove('show');
+        }
+        
+        // 创建彩纸效果
+        function createConfetti() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+            
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 2 + 's';
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 3000);
+                }, i * 20);
+            }
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('load', async () => {
+            await getLotterySettings();
+            await loadCandidates();
+            await loadHistory();
+        });
+        
+        // 键盘控制
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (isSpinning) {
+                    stopLottery();
+                } else {
+                    startLottery();
+                }
+            }
+        });
+    </script>
+    
+    <!-- 版权信息 -->
+    <div style="text-align: center; padding: 20px; color: #666; font-size: 12px; margin-top: 20px;">
+        <p>© 2025 开发者赵宏宇版权所有</p>
+    </div>
+</body>
+</html>

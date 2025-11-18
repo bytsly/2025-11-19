@@ -1,0 +1,585 @@
+"""
+"""
+管理后台路由
+"""
+from flask import Blueprint, request, send_from_directory, current_app, session, redirect, url_for
+from functools import wraps
+from backend.models import db, Candidate
+from backend.services.hotspot_service import HotspotService
+from backend.services.qrcode_service import QRCodeService
+from backend.services.file_service import FileService
+from backend.services.vote_service import VoteService
+from backend.services.lottery_service import LotteryService
+from backend.utils.response import success_response, error_response
+import os
+from datetime import datetime
+
+admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
+
+
+# ============ 登录验证装饰器 ============
+
+def login_required(f):
+    """登录验证装饰器"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('admin_logged_in'):
+            return error_response('未登录，请先登录', 401)
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+# ============ 登录管理 ============
+
+@admin_bp.route('/login', methods=['POST'])
+def login():
+    """管理员登录"""
+    try:
+        data = request.get_json()
+        username = data.get('username', '').strip()
+        password = data.get('password', '').strip()
+        
+        if not username or not password:
+            return error_response('用户名和密码不能为空')
+        
+        # 验证账号密码
+        admin_username = current_app.config['ADMIN_USERNAME']
+        admin_password = current_app.config['ADMIN_PASSWORD']
+        
+        if username == admin_username and password == admin_password:
+            # 登录成功，设置session
+            session['admin_logged_in'] = True
+            session['admin_username'] = username
+            return success_response({
+                'username': username
+            }, '登录成功')
+        else:
+            return error_response('用户名或密码错误')
+    
+    except Exception as e:
+        return error_response(f'登录失败: {str(e)}')
+
+
+@admin_bp.route('/logout', methods=['POST'])
+def logout():
+    """管理员登出"""
+    session.pop('admin_logged_in', None)
+    session.pop('admin_username', None)
+    return success_response(message='登出成功')
+
+
+@admin_bp.route('/check-auth', methods=['GET'])
+def check_auth():
+    """检查登录状态"""
+    if session.get('admin_logged_in'):
+        return success_response({
+            'logged_in': True,
+            'username': session.get('admin_username')
+        })
+    else:
+        return success_response({
+            'logged_in': False
+        })
+
+
+# ============ 候选人管理 ============
+
+@admin_bp.route('/candidates', methods=['GET'])
+@login_required
+def get_candidates():
+    """获取所有候选人"""
+    try:
+        candidates = Candidate.query.order_by(Candidate.votes.desc()).all()
+        return success_response([c.to_dict() for c in candidates])
+    except Exception as e:
+        return error_response(f'获取候选人列表失败: {str(e)}')
+
+
+@admin_bp.route('/candidates', methods=['POST'])
+@login_required
+def add_candidate():
+    """添加候选人"""
+    try:
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        
+        if not name:
+            return error_response('姓名不能为空')
+        
+        # 检查重名
+        existing = Candidate.query.filter_by(name=name).first()
+        if existing:
+            return error_response('该候选人已存在')
+        
+        candidate = Candidate(
+            name=name,
+            description=data.get('description', ''),
+            photo_path=data.get('photo_path', '')
+        )
+        
+        db.session.add(candidate)
+        db.session.commit()
+        
+        return success_response(candidate.to_dict(), '添加成功')
+        
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'添加失败: {str(e)}')
+
+
+@admin_bp.route('/candidates/<int:candidate_id>', methods=['PUT'])
+@login_required
+def update_candidate(candidate_id):
+    """更新候选人"""
+    try:
+        candidate = Candidate.query.get(candidate_id)
+        if not candidate:
+            return error_response('候选人不存在', 404)
+        
+        data = request.get_json()
+        
+        if 'name' in data:
+            name = data['name'].strip()
+            if not name:
+                return error_response('姓名不能为空')
+            candidate.name = name
+        
+        if 'description' in data:
+            candidate.description = data['description']
+        
+        if 'photo_path' in data:
+            candidate.photo_path = data['photo_path']
+        
+        db.session.commit()
+        
+        return success_response(candidate.to_dict(), '更新成功')
+        
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'更新失败: {str(e)}')
+
+
+@admin_bp.route('/candidates/<int:candidate_id>', methods=['DELETE'])
+@login_required
+def delete_candidate(candidate_id):
+    """删除候选人"""
+    try:
+        candidate = Candidate.query.get(candidate_id)
+        if not candidate:
+            return error_response('候选人不存在', 404)
+        
+        db.session.delete(candidate)
+        db.session.commit()
+        
+        return success_response(message='删除成功')
+        
+    except Exception as e:
+        db.session.rollback()
+        return error_response(f'删除失败: {str(e)}')
+
+
+# ============ 文件上传与导入 ============
+
+@admin_bp.route('/upload/photo', methods=['POST'])
+@login_required
+def upload_photo():
+    """上传照片"""
+    try:
+        if 'file' not in request.files:
+            return error_response('没有上传文件')
+        
+        file = request.files['file']
+        if file.filename == '':
+            return error_response('文件名为空')
+        
+        if not FileService.allowed_file(file.filename, {'png', 'jpg', 'jpeg', 'gif'}):
+            return error_response('不支持的文件格式')
+        
+        # 保存文件
+        photo_folder = current_app.config['PHOTO_FOLDER']
+        filepath = FileService.save_uploaded_file(file, photo_folder)
+        
+        if not filepath:
+            return error_response('文件保存失败')
+        
+        # 获取相对路径（用于访问）
+        relative_path = os.path.relpath(filepath, current_app.config['UPLOAD_FOLDER'])
+        photo_url = f'/uploads/{relative_path.replace(os.sep, "/")}'
+        
+        return success_response({
+            'path': photo_url,
+            'filename': os.path.basename(filepath)
+        }, '上传成功')
+        
+    except Exception as e:
+        return error_response(f'上传失败: {str(e)}')
+
+
+@admin_bp.route('/import/file', methods=['POST'])
+def import_from_file():
+    """从文件导入候选人"""
+    try:
+        if 'file' not in request.files:
+            return error_response('没有上传文件')
+        
+        file = request.files['file']
+        if file.filename == '':
+            return error_response('文件名为空')
+        
+        # 检查文件类型
+        if not FileService.allowed_file(file.filename, {'xlsx', 'xls', 'csv'}):
+            return error_response('不支持的文件格式，请使用Excel或CSV文件')
+        
+        # 保存文件
+        file_folder = current_app.config['FILE_FOLDER']
+        filepath = FileService.save_uploaded_file(file, file_folder)
+        
+        if not filepath:
+            return error_response('文件保存失败')
+        
+        # 根据文件类型导入
+        ext = filepath.rsplit('.', 1)[1].lower()
+        if ext in ['xlsx', 'xls']:
+            result = FileService.import_candidates_from_excel(filepath)
+        else:
+            result = FileService.import_candidates_from_csv(filepath)
+        
+        if result['success']:
+            return success_response(result, result['message'])
+        else:
+            return error_response(result['message'])
+        
+    except Exception as e:
+        return error_response(f'导入失败: {str(e)}')
+
+
+# ============ 投票管理 ============
+
+@admin_bp.route('/votes/statistics', methods=['GET'])
+def get_vote_statistics():
+    """获取投票统计"""
+    try:
+        stats = VoteService.get_vote_statistics()
+        if stats['success']:
+            return success_response(stats)
+        else:
+            return error_response(stats['message'])
+    except Exception as e:
+        return error_response(f'获取统计失败: {str(e)}')
+
+
+@admin_bp.route('/votes/recent', methods=['GET'])
+def get_recent_votes():
+    """获取最近投票记录"""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+        votes = VoteService.get_recent_votes(limit)
+        return success_response(votes)
+    except Exception as e:
+        return error_response(f'获取记录失败: {str(e)}')
+
+
+@admin_bp.route('/votes/reset', methods=['POST'])
+@login_required
+def reset_votes():
+    """重置投票"""
+    try:
+        result = VoteService.reset_votes()
+        if result['success']:
+            return success_response(message=result['message'])
+        else:
+            return error_response(result['message'])
+    except Exception as e:
+        return error_response(f'重置失败: {str(e)}')
+
+
+@admin_bp.route('/votes/export', methods=['GET'])
+def export_votes():
+    """导出投票结果"""
+    try:
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'vote_results_{timestamp}.xlsx'
+        filepath = os.path.join(current_app.config['FILE_FOLDER'], filename)
+        
+        result = FileService.export_results_to_excel(filepath)
+        
+        if result['success']:
+            return send_from_directory(
+                current_app.config['FILE_FOLDER'],
+                filename,
+                as_attachment=True
+            )
+        else:
+            return error_response(result['message'])
+            
+    except Exception as e:
+        return error_response(f'导出失败: {str(e)}')
+
+
+# ============ 抽奖管理 ============
+
+@admin_bp.route('/lottery/draw', methods=['POST'])
+@login_required
+def draw_lottery():
+    """执行抽奖"""
+    try:
+        data = request.get_json()
+        count = data.get('count', 1)
+        prize_name = data.get('prize_name', '')
+        exclude_winners = data.get('exclude_winners', True)
+        
+        result = LotteryService.draw_lottery(count, prize_name, exclude_winners)
+        
+        if result['success']:
+            return success_response(result, result['message'])
+        else:
+            return error_response(result['message'])
+            
+    except Exception as e:
+        return error_response(f'抽奖失败: {str(e)}')
+
+
+@admin_bp.route('/lottery/history', methods=['GET'])
+def get_lottery_history():
+    """获取抽奖历史"""
+    try:
+        history = LotteryService.get_lottery_history()
+        return success_response(history)
+    except Exception as e:
+        return error_response(f'获取历史失败: {str(e)}')
+
+
+@admin_bp.route('/lottery/available', methods=['GET'])
+def get_available_lottery_count():
+    """获取可抽奖人数"""
+    try:
+        exclude_winners = request.args.get('exclude_winners', 'true').lower() == 'true'
+        count = LotteryService.get_available_count(exclude_winners)
+        return success_response({'count': count})
+    except Exception as e:
+        return error_response(f'获取人数失败: {str(e)}')
+
+
+@admin_bp.route('/lottery/reset', methods=['POST'])
+@login_required
+def reset_lottery():
+    """重置抽奖"""
+    try:
+        result = LotteryService.reset_lottery()
+        if result['success']:
+            return success_response(message=result['message'])
+        else:
+            return error_response(result['message'])
+    except Exception as e:
+        return error_response(f'重置失败: {str(e)}')
+
+
+# ============ 网络与系统 ============
+
+@admin_bp.route('/hotspot/create', methods=['POST'])
+@login_required
+def create_hotspot():
+    """创建WiFi热点"""
+    try:
+        data = request.get_json()
+        ssid = data.get('ssid', current_app.config['HOTSPOT_SSID'])
+        password = data.get('password', current_app.config['HOTSPOT_PASSWORD'])
+        
+        result = HotspotService.create_hotspot(ssid, password)
+        
+        if result['success']:
+            return success_response(result, result['message'])
+        else:
+            return error_response(result['message'])
+            
+    except Exception as e:
+        return error_response(f'创建热点失败: {str(e)}')
+
+
+@admin_bp.route('/hotspot/stop', methods=['POST'])
+@login_required
+def stop_hotspot():
+    """停止WiFi热点"""
+    try:
+        result = HotspotService.stop_hotspot()
+        
+        if result['success']:
+            return success_response(message=result['message'])
+        else:
+            return error_response(result['message'])
+            
+    except Exception as e:
+        return error_response(f'停止热点失败: {str(e)}')
+
+
+@admin_bp.route('/hotspot/status', methods=['GET'])
+def get_hotspot_status():
+    """获取热点状态"""
+    try:
+        result = HotspotService.get_hotspot_status()
+        return success_response(result)
+    except Exception as e:
+        return error_response(f'获取状态失败: {str(e)}')
+
+
+@admin_bp.route('/hotspot/sharing/enable', methods=['POST'])
+@login_required
+def enable_internet_sharing():
+    """启用外网共享"""
+    try:
+        result = HotspotService.enable_internet_sharing(True)
+        
+        if result['success']:
+            return success_response(result, result['message'])
+        else:
+            return error_response(result['message'])
+            
+    except Exception as e:
+        return error_response(f'启用共享失败: {str(e)}')
+
+
+@admin_bp.route('/hotspot/sharing/disable', methods=['POST'])
+@login_required
+def disable_internet_sharing():
+    """禁用外网共享"""
+    try:
+        result = HotspotService.enable_internet_sharing(False)
+        
+        if result['success']:
+            return success_response(result, result['message'])
+        else:
+            return error_response(result['message'])
+            
+    except Exception as e:
+        return error_response(f'禁用共享失败: {str(e)}')
+
+
+@admin_bp.route('/hotspot/sharing/status', methods=['GET'])
+def get_sharing_status():
+    """获取共享状态"""
+    try:
+        result = HotspotService.get_sharing_status()
+        return success_response(result)
+    except Exception as e:
+        return error_response(f'获取共享状态失败: {str(e)}')
+
+
+@admin_bp.route('/qrcode/vote', methods=['GET'])
+def get_vote_qrcode():
+    """获取投票二维码"""
+    try:
+        # 优先使用热点IP（如果热点已启动）
+        hotspot_status = HotspotService.get_hotspot_status()
+        if hotspot_status.get('running', False):
+            ip = HotspotService.get_hotspot_ip()
+        else:
+            ip = HotspotService.get_local_ip()
+        
+        port = current_app.config['PORT']
+        qr_image = QRCodeService.generate_vote_qrcode(ip, port)
+        
+        if qr_image:
+            return success_response({
+                'qrcode': qr_image,
+                'url': f'http://{ip}:{port}/vote',
+                'ip': ip,
+                'using_hotspot': hotspot_status.get('running', False)
+            })
+        else:
+            return error_response('生成二维码失败')
+            
+    except Exception as e:
+        return error_response(f'生成失败: {str(e)}')
+
+
+@admin_bp.route('/qrcode/lottery', methods=['GET'])
+def get_lottery_qrcode():
+    """获取抽奖二维码"""
+    try:
+        # 优先使用热点IP（如果热点已启动）
+        hotspot_status = HotspotService.get_hotspot_status()
+        if hotspot_status.get('running', False):
+            ip = HotspotService.get_hotspot_ip()
+        else:
+            ip = HotspotService.get_local_ip()
+        
+        port = current_app.config['PORT']
+        qr_image = QRCodeService.generate_lottery_qrcode(ip, port)
+        
+        if qr_image:
+            return success_response({
+                'qrcode': qr_image,
+                'url': f'http://{ip}:{port}/lottery',
+                'ip': ip,
+                'using_hotspot': hotspot_status.get('running', False)
+            })
+        else:
+            return error_response('生成二维码失败')
+            
+    except Exception as e:
+        return error_response(f'生成失败: {str(e)}')
+
+
+@admin_bp.route('/qrcode/admin', methods=['GET'])
+def get_admin_qrcode():
+    """获取管理后台二维码"""
+    try:
+        # 优先使用热点IP（如果热点已启动）
+        hotspot_status = HotspotService.get_hotspot_status()
+        if hotspot_status.get('running', False):
+            ip = HotspotService.get_hotspot_ip()
+        else:
+            ip = HotspotService.get_local_ip()
+        
+        port = current_app.config['PORT']
+        qr_image = QRCodeService.generate_admin_qrcode(ip, port)
+        
+        if qr_image:
+            return success_response({
+                'qrcode': qr_image,
+                'url': f'http://{ip}:{port}/admin',
+                'ip': ip,
+                'using_hotspot': hotspot_status.get('running', False)
+            })
+        else:
+            return error_response('生成二维码失败')
+            
+    except Exception as e:
+        return error_response(f'生成失败: {str(e)}')
+
+
+@admin_bp.route('/system/info', methods=['GET'])
+def get_system_info():
+    """获取系统信息"""
+    try:
+        # 获取热点状态
+        hotspot_status = HotspotService.get_hotspot_status()
+        
+        # 根据热点状态选择IP
+        if hotspot_status.get('running', False):
+            # 热点已启动，使用热点IP
+            hotspot_ip = HotspotService.get_hotspot_ip()
+            local_ip = HotspotService.get_local_ip()
+            primary_ip = hotspot_ip
+        else:
+            # 热点未启动，使用局域网IP
+            local_ip = HotspotService.get_local_ip()
+            hotspot_ip = None
+            primary_ip = local_ip
+        
+        port = current_app.config['PORT']
+        
+        return success_response({
+            'ip': primary_ip,
+            'local_ip': local_ip,
+            'hotspot_ip': hotspot_ip,
+            'port': port,
+            'vote_url': f'http://{primary_ip}:{port}/vote',
+            'lottery_url': f'http://{primary_ip}:{port}/lottery',
+            'admin_url': f'http://{primary_ip}:{port}/admin',
+            'hotspot_running': hotspot_status.get('running', False),
+            'hotspot_ssid': hotspot_status.get('ssid')
+        })
+        
+    except Exception as e:
+        return error_response(f'获取信息失败: {str(e)}')

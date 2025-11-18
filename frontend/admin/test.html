@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API测试页面</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .result {
+            background: #f9f9f9;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            font-family: 'Consolas', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success {
+            border-left-color: #4CAF50;
+            background: #e8f5e9;
+        }
+        .error {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+        .info {
+            background: #e3f2fd;
+            border-left-color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 管理后台API测试工具</h1>
+    
+    <div class="test-section">
+        <h2>1. 基础连接测试</h2>
+        <button onclick="testBasicConnection()">测试基础连接</button>
+        <button onclick="testScriptLoading()">测试脚本加载</button>
+        <button onclick="testSocketIO()">测试SocketIO</button>
+        <div id="basic-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. API接口测试</h2>
+        <button onclick="testGetCandidates()">获取候选人列表</button>
+        <button onclick="testGetStatistics()">获取统计数据</button>
+        <button onclick="testAddCandidate()">测试添加候选人</button>
+        <div id="api-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 系统信息</h2>
+        <button onclick="showSystemInfo()">显示系统信息</button>
+        <div id="system-result" class="result info"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const API_BASE = '/api/admin';
+        
+        function log(elementId, message, type = '') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            element.textContent = `[${timestamp}] ${message}`;
+            element.className = `result ${type}`;
+        }
+        
+        // 1. 基础连接测试
+        async function testBasicConnection() {
+            log('basic-result', '正在测试基础连接...', 'info');
+            try {
+                const response = await fetch('/');
+                if (response.ok) {
+                    log('basic-result', '✅ 服务器连接正常！', 'success');
+                } else {
+                    log('basic-result', `❌ 服务器响应异常: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log('basic-result', `❌ 连接失败: ${error.message}`, 'error');
+            }
+        }
+        
+        function testScriptLoading() {
+            log('basic-result', '检查脚本加载状态...', 'info');
+            const scripts = Array.from(document.scripts).map(s => s.src || s.textContent.substring(0, 50));
+            log('basic-result', `✅ 已加载 ${scripts.length} 个脚本\n${scripts.join('\n')}`, 'success');
+        }
+        
+        function testSocketIO() {
+            log('basic-result', '正在测试SocketIO连接...', 'info');
+            try {
+                const socket = io();
+                socket.on('connect', () => {
+                    log('basic-result', '✅ SocketIO连接成功！', 'success');
+                    socket.disconnect();
+                });
+                socket.on('connect_error', (error) => {
+                    log('basic-result', `❌ SocketIO连接失败: ${error.message}`, 'error');
+                });
+            } catch (error) {
+                log('basic-result', `❌ SocketIO初始化失败: ${error.message}`, 'error');
+            }
+        }
+        
+        // 2. API接口测试
+        async function testGetCandidates() {
+            log('api-result', '正在获取候选人列表...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/candidates`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const count = result.data?.length || 0;
+                    log('api-result', 
+                        `✅ 获取成功！共 ${count} 个候选人\n\n${JSON.stringify(result, null, 2)}`, 
+                        'success');
+                } else {
+                    log('api-result', `❌ 请求失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log('api-result', `❌ 请求异常: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testGetStatistics() {
+            log('api-result', '正在获取统计数据...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/votes/statistics`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    log('api-result', 
+                        `✅ 获取成功！
+总投票数: ${result.data.total_votes}
+总候选人: ${result.data.total_candidates}
+
+${JSON.stringify(result, null, 2)}`, 
+                        'success');
+                } else {
+                    log('api-result', `❌ 请求失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log('api-result', `❌ 请求异常: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAddCandidate() {
+            log('api-result', '正在测试添加候选人...', 'info');
+            try {
+                const testData = {
+                    name: '测试候选人-' + Date.now(),
+                    description: '这是一个测试候选人',
+                    photo_path: ''
+                };
+                
+                const response = await fetch(`${API_BASE}/candidates`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    log('api-result', 
+                        `✅ 添加成功！\n候选人ID: ${result.data.id}\n姓名: ${result.data.name}`, 
+                        'success');
+                } else {
+                    log('api-result', `❌ 添加失败: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log('api-result', `❌ 请求异常: ${error.message}`, 'error');
+            }
+        }
+        
+        // 3. 系统信息
+        function showSystemInfo() {
+            const info = {
+                '浏览器': navigator.userAgent,
+                '当前URL': window.location.href,
+                'API地址': window.location.origin + API_BASE,
+                '屏幕分辨率': `${screen.width}x${screen.height}`,
+                '窗口大小': `${window.innerWidth}x${window.innerHeight}`,
+                'Cookie启用': navigator.cookieEnabled,
+                '在线状态': navigator.onLine
+            };
+            
+            const infoText = Object.entries(info)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join('\n');
+            
+            log('system-result', infoText, 'info');
+        }
+        
+        // 页面加载完成后自动执行基础测试
+        window.addEventListener('load', () => {
+            console.log('测试页面已加载');
+            showSystemInfo();
+        });
+    </script>
+    
+    <!-- 版权信息 -->
+    <div style="text-align: center; padding: 20px; color: #666; font-size: 12px; margin-top: 20px;">
+        <p>© 2025 开发者赵宏宇版权所有</p>
+    </div>
+</body>
+</html>

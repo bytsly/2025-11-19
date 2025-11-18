@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - 投票抽奖系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: #f5f7fa;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 22px;
+            text-align: center;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 15px auto;
+            padding: 0 10px;
+        }
+        
+        /* 移动端优化 */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px auto;
+                padding: 0 5px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .tabs {
+                padding: 10px 5px;
+                gap: 3px;
+            }
+            
+            .tab {
+                padding: 8px 10px;
+                font-size: 12px;
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+            
+            .section {
+                padding: 15px 10px;
+                margin-bottom: 10px;
+            }
+            
+            .section-title {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+            
+            .form-group label {
+                font-size: 13px;
+            }
+            
+            .form-group input,
+            .form-group textarea,
+            .form-group select {
+                padding: 8px;
+                font-size: 13px;
+            }
+            
+            .button {
+                padding: 8px 15px;
+                font-size: 13px;
+            }
+            
+            .modal-content {
+                padding: 15px;
+                width: 95%;
+                max-width: 95%;
+            }
+            
+            .modal-header {
+                font-size: 16px;
+            }
+            
+            .table-container {
+                max-height: 400px;
+            }
+            
+            .candidates-table th,
+            .candidates-table td {
+                padding: 6px 4px;
+                font-size: 12px;
+            }
+            
+            .candidate-photo-small {
+                width: 30px;
+                height: 30px;
+                min-width: 30px;
+                min-height: 30px;
+            }
+            
+            .action-buttons {
+                flex-direction: row;
+                gap: 3px;
+            }
+            
+            .action-btn {
+                padding: 3px 6px;
+                font-size: 11px;
+            }
+            
+            .qrcode-container img {
+                max-width: 200px;
+            }
+            
+            .url-display {
+                font-size: 11px;
+                padding: 8px;
+            }
+            
+            .message {
+                padding: 10px 15px;
+                font-size: 12px;
+                max-width: 95%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 18px;
+            }
+            
+            .tabs {
+                padding: 8px 3px;
+                gap: 2px;
+            }
+            
+            .tab {
+                padding: 6px 8px;
+                font-size: 11px;
+            }
+            
+            .section {
+                padding: 12px 8px;
+            }
+            
+            .section-title {
+                font-size: 15px;
+            }
+            
+            .form-group label {
+                font-size: 12px;
+            }
+            
+            .form-group input,
+            .form-group textarea,
+            .form-group select {
+                padding: 6px;
+                font-size: 12px;
+            }
+            
+            .button {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
+            .modal-content {
+                padding: 12px;
+            }
+            
+            .modal-header {
+                font-size: 15px;
+            }
+            
+            .table-container {
+                max-height: 300px;
+            }
+            
+            .candidates-table th,
+            .candidates-table td {
+                padding: 5px 3px;
+                font-size: 11px;
+            }
+            
+            .candidate-photo-small {
+                width: 25px;
+                height: 25px;
+                min-width: 25px;
+                min-height: 25px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 2px;
+            }
+            
+            .action-btn {
+                padding: 2px 5px;
+                font-size: 10px;
+            }
+            
+            .qrcode-container img {
+                max-width: 150px;
+            }
+            
+            .url-display {
+                font-size: 10px;
+                padding: 6px;
+            }
+            
+            .message {
+                padding: 8px 12px;
+                font-size: 11px;
+            }
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 5px;
+            background: white;
+            padding: 15px 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .tab {
+            padding: 10px 15px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .tab:hover {
+            background: #e0e0e0;
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .section {
+            background: white;
+            padding: 20px 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .button.danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        }
+        
+        .button.success {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #333;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        
+        .candidates-table {
+            width: 100%;
+            border-collapse: collapse;
+            /* 添加硬件加速和优化渲染 */
+            transform: translateZ(0);
+            will-change: transform;
+        }
+        
+        .candidates-table th,
+        .candidates-table td {
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            /* 防止文本换行导致的布局抖动 */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 13px;
+        }
+        
+        .candidates-table th {
+            background: #f5f5f5;
+            font-weight: bold;
+            color: #333;
+            /* 固定表头，防止滚动时抖动 */
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .candidates-table tr {
+            /* 添加过渡效果，使变化更平滑 */
+            transition: background-color 0.2s ease;
+        }
+        
+        .candidates-table tr:hover {
+            background: #f9f9f9;
+        }
+        
+        /* 为表格容器添加固定高度和滚动优化 */
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+        
+        /* 图片加载优化 */
+        .candidate-photo-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #f0f0f0;
+            /* 防止图片加载时布局抖动 */
+            display: block;
+            min-width: 40px;
+            min-height: 40px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .action-btn {
+            padding: 4px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .action-btn.edit {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .action-btn.delete {
+            background: #f44336;
+            color: white;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+        }
+        
+        .modal.show {
+            display: flex;
+            background: rgba(0,0,0,0.5);
+        }
+        
+        .modal.hiding {
+            background: rgba(0,0,0,0);
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 90%;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .modal.show .modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+        
+        .modal.hiding .modal-content {
+            transform: scale(0.9);
+            opacity: 0;
+        }
+        
+        .modal-header {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+        
+        .qrcode-container {
+            text-align: center;
+            padding: 15px 0;
+        }
+        
+        .qrcode-container img {
+            max-width: 250px;
+            margin: 15px auto;
+            display: block;
+        }
+        
+        .url-display {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .message {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 12px 20px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            z-index: 2000;
+            display: none;
+            font-size: 14px;
+            max-width: 90%;
+        }
+        
+        .message.success {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .message.error {
+            background: #f44336;
+            color: white;
+        }
+        
+        .message.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .file-upload {
+            border: 2px dashed #ddd;
+            padding: 20px;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #f9f9f9;
+        }
+        
+        .file-upload input[type="file"] {
+            display: none;
+        }
+        
+        .hotspot-status {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .hotspot-status.running {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .hotspot-status.stopped {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .password-toggle {
+            position: relative;
+        }
+        
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        /* 响应式优化 */
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .section {
+                padding: 15px 12px;
+            }
+            
+            .section-title {
+                font-size: 16px;
+            }
+            
+            .button {
+                padding: 8px 15px;
+                font-size: 13px;
+            }
+            
+            .stat-value {
+                font-size: 28px;
+            }
+            
+            .stat-label {
+                font-size: 13px;
+            }
+            
+            .tabs {
+                padding: 10px 5px;
+            }
+            
+            .tab {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            
+            .candidates-table th,
+            .candidates-table td {
+                padding: 8px 5px;
+                font-size: 12px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 3px;
+            }
+            
+            .action-btn {
+                padding: 3px 8px;
+                font-size: 11px;
+            }
+            
+            .candidate-photo-small {
+                width: 35px;
+                height: 35px;
+                min-width: 35px;
+                min-height: 35px;
+            }
+            
+            .modal-content {
+                padding: 15px;
+            }
+            
+            .modal-header {
+                font-size: 16px;
+            }
+            
+            .form-group label {
+                font-size: 13px;
+            }
+            
+            .form-group input,
+            .form-group textarea,
+            .form-group select {
+                padding: 8px;
+                font-size: 13px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stat-card {
+                padding: 15px 10px;
+            }
+            
+            .stat-value {
+                font-size: 24px;
+            }
+            
+            .stat-label {
+                font-size: 12px;
+            }
+            
+            .section {
+                padding: 12px 10px;
+            }
+            
+            .section-title {
+                font-size: 15px;
+            }
+            
+            .button {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
+            .candidates-table th,
+            .candidates-table td {
+                padding: 6px 4px;
+                font-size: 11px;
+            }
+            
+            .action-btn {
+                padding: 2px 6px;
+                font-size: 10px;
+            }
+            
+            .candidate-photo-small {
+                width: 30px;
+                height: 30px;
+                min-width: 30px;
+                min-height: 30px;
+            }
+            
+            .modal-content {
+                padding: 12px;
+            }
+            
+            .modal-header {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 管理后台 - 投票抽奖系统</h1>
+    </div>
+    
+    <div class="container">
+        <!-- 标签页 -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('dashboard')">📈 数据看板</button>
+            <button class="tab" onclick="switchTab('vote-config')">⚙️ 投票设置</button>
+            <button class="tab" onclick="switchTab('candidates')">👥 候选人管理</button>
+            <button class="tab" onclick="switchTab('network')">📡 网络设置</button>
+            <button class="tab" onclick="switchTab('lottery')">🎁 抽奖管理</button>
+            <button class="tab" onclick="switchTab('account')">👤 账户设置</button>
+            <button class="tab danger" onclick="logout()" style="margin-left: auto;">🚪 退出登录</button>
+        </div>
+        
+
+        
+        <!-- 数据看板 -->
+        <div id="dashboard" class="tab-content active">
+            <div class="section">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+                    <button class="button" onclick="refreshData()">🔄 刷新数据</button>
+                    <button class="button success" onclick="exportResults()">📥 导出结果</button>
+                    <button class="button danger" onclick="resetVotes()" style="margin-left: auto;">⚠️ 重置投票</button>
+                </div>
+                <h2 class="section-title">实时统计</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalVotes">0</div>
+                        <div class="stat-label">总投票数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalCandidates">0</div>
+                        <div class="stat-label">候选人数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="topVotes">0</div>
+                        <div class="stat-label">最高票数</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">投票排行</h2>
+                <div class="table-container">
+                    <table class="candidates-table" id="rankingTable">
+                        <thead>
+                            <tr>
+                                <th>排名</th>
+                                <th>照片</th>
+                                <th>姓名</th>
+                                <th>得票数</th>
+                                <th>占比</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+
+        </div>
+        
+        <!-- 候选人管理 -->
+        <div id="candidates" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">添加候选人</h2>
+                <div class="form-group">
+                    <label>导入方式：</label>
+                    <button class="button" onclick="showAddModal()">➕ 手动添加</button>
+                    <button class="button" onclick="document.getElementById('fileImport').click()">📄 文件导入</button>
+                    <button class="button" onclick="downloadTemplate()">💾 下载模板</button>
+                    <button class="button" onclick="showQuickAddModal()">📱 拍照添加</button>
+                    <input type="file" id="fileImport" accept=".xlsx,.xls,.csv" onchange="importFile()" style="display:none;">
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">📱 扫码访问管理后台</h2>
+                <div id="adminQrcodeDisplay" class="qrcode-container">
+                    <p>点击按钮生成二维码</p>
+                </div>
+                <button class="button" onclick="generateAdminQRCode()">📡 生成管理后台二维码</button>
+                <p style="margin-top: 15px; color: #666; font-size: 14px;">
+                    ℹ️ 扫描二维码即可用手机或其他设备快速打开管理后台
+                </p>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">候选人列表</h2>
+                <div class="table-container">
+                    <table class="candidates-table" id="candidatesTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>照片</th>
+                                <th>姓名</th>
+                                <th>描述</th>
+                                <th>得票数</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 网络设置 -->
+        <div id="network" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">WiFi热点</h2>
+                <div id="hotspotStatus" class="hotspot-status stopped">
+                    <strong>状态:</strong> 未运行
+                </div>
+                <div class="form-group">
+                    <label>热点名称 (SSID):</label>
+                    <input type="text" id="hotspotSSID" value="投票抽奖系统">
+                </div>
+                <div class="form-group">
+                    <label>热点密码 (至少8位):</label>
+                    <div class="password-toggle">
+                        <input type="password" id="hotspotPassword" value="12345678">
+                        <button type="button" class="password-toggle-btn" onclick="togglePassword('hotspotPassword')">👁️</button>
+                    </div>
+                </div>
+                <button class="button success" onclick="createHotspot()">🚀 创建热点</button>
+                <button class="button danger" onclick="stopHotspot()">⏹️ 停止热点</button>
+                <button class="button" onclick="checkHotspotStatus()">🔍 检查状态</button>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">外网共享</h2>
+                <div class="hotspot-status stopped" style="text-align: center; padding: 30px;">
+                    <div style="font-size: 48px; margin-bottom: 15px;">🚧</div>
+                    <strong style="font-size: 18px; display: block; margin-bottom: 10px;">功能正在开发中</strong>
+                    <p style="font-size: 14px; color: #666; line-height: 1.6;">
+                        外网共享功能正在优化升级中，敬请期待！<br>
+                        当前版本暂不支持此功能。
+                    </p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">二维码</h2>
+                <div style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px;">
+                    <p style="margin-bottom: 10px; color: #666; font-size: 13px;">选择二维码类型：</p>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="button" onclick="generateQRCode()">🗳️ 投票二维码</button>
+                        <button class="button" onclick="generateWiFiQRCode()" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);">
+                            📶 WiFi连接二维码
+                        </button>
+                        <button class="button" onclick="generateComboQRCode()" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);">
+                            🔗 WiFi+投票组合
+                        </button>
+                    </div>
+                    <p style="margin-top: 10px; font-size: 12px; color: #999; line-height: 1.6;">
+                        • <strong>投票二维码</strong>：直接扫码访问投票页面<br>
+                        • <strong>WiFi连接</strong>：扫码自动连接WiFi（支持Android 10+ / iOS 11+）<br>
+                        • <strong>组合二维码</strong>：先连接WiFi，再访问投票页面
+                    </p>
+                </div>
+                <div id="qrcodeDisplay" class="qrcode-container">
+                    <p>点击按钮生成二维码</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">系统信息</h2>
+                <div id="systemInfo">
+                    <p>加载中...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 投票设置 -->
+        <div id="vote-config" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">投票设置</h2>
+                <form id="voteConfigForm">
+                    <div class="form-group">
+                        <label>投票活动名称</label>
+                        <input type="text" id="voteName" placeholder="请输入投票活动名称" required>
+                        <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                            此名称将显示在投票页面的标题位置
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>每人最大投票数</label>
+                        <input type="number" id="maxVotesPerUser" min="1" max="100" value="1" required>
+                        <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                            控制每个用户可以投多少票（1-100票）
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>当前投票统计</label>
+                        <div id="voteStats" style="background: #f5f5f5; padding: 12px; border-radius: 6px; margin-top: 10px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; font-size: 13px;">
+                                <span>总投票数: <strong id="totalVotes">0</strong></span>
+                                <span>总候选人数: <strong id="totalCandidates">0</strong></span>
+                                <span>独立投票用户: <strong id="uniqueVoters">0</strong></span>
+                                <span>每人最大票数: <strong id="maxVotesPerUser">1</strong></span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+                                <span>候选人平均票数: <strong id="avgVotesPerCandidate">0.0</strong></span>
+                                <span>投票完成率: <strong id="voteCompletionRate">0%</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="submit" class="button success">保存配置</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 抽奖管理 -->
+        <div id="lottery" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">执行抽奖</h2>
+                <div class="form-group">
+                    <label>抽奖轮数:</label>
+                    <input type="number" id="lotteryCount" value="1" min="1">
+                </div>
+                <div class="form-group">
+                    <label>奖项名称:</label>
+                    <input type="text" id="prizeName" placeholder="例如: 一等奖">
+                </div>
+                <p style="font-size: 14px;">可抽奖人数: <span id="availableCount">-</span></p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                    <button class="button success" onclick="drawLottery()">🎁 开始抽奖</button>
+                    <button class="button" onclick="window.open('/lottery', '_blank')">📺 打开抽奖大屏</button>
+                    <button type="button" id="excludeWinnersBtn" class="button" onclick="toggleExcludeWinners()" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white;">
+                        ✅ 排除已中奖者
+                    </button>
+                    <button class="button danger" onclick="resetLottery()" style="margin-left: auto;">⚠️ 重置抽奖</button>
+                    <input type="hidden" id="excludeWinners" value="true">
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">抽奖历史</h2>
+                <div class="table-container">
+                    <table class="candidates-table" id="lotteryHistoryTable">
+                        <thead>
+                            <tr>
+                                <th>轮次</th>
+                                <th>奖项</th>
+                                <th>中奖者</th>
+                                <th>时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 账户设置 -->
+        <div id="account" class="tab-content">
+            <div class="section">
+                <h2 class="section-title">修改密码</h2>
+                <form id="changePasswordForm">
+                    <div class="form-group">
+                        <label for="currentPassword">当前密码</label>
+                        <div class="password-toggle">
+                            <input type="password" id="currentPassword" required>
+                            <button type="button" class="password-toggle-btn" onclick="togglePassword('currentPassword')">👁️</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newPassword">新密码</label>
+                        <div class="password-toggle">
+                            <input type="password" id="newPassword" required>
+                            <button type="button" class="password-toggle-btn" onclick="togglePassword('newPassword')">👁️</button>
+                        </div>
+                        <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                            密码长度至少为6位
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirmPassword">确认新密码</label>
+                        <div class="password-toggle">
+                            <input type="password" id="confirmPassword" required>
+                            <button type="button" class="password-toggle-btn" onclick="togglePassword('confirmPassword')">👁️</button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="button success">保存密码</button>
+                </form>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">账户信息</h2>
+                <div style="background: #f5f5f5; padding: 15px; border-radius: 6px;">
+                    <p><strong>用户名:</strong> <span id="currentUsername">admin</span></p>
+                    <p style="margin-top: 10px; color: #666; font-size: 14px;">
+                        💡 建议定期修改密码以确保账户安全
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加/编辑候选人模态框 -->
+    <div id="candidateModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-header" id="modalTitle">添加候选人</h2>
+            <form id="candidateForm">
+                <input type="hidden" id="candidateId">
+                <div class="form-group">
+                    <label>姓名 *</label>
+                    <input type="text" id="candidateName" required>
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea id="candidateDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>照片</label>
+                    <input type="file" id="candidatePhoto" accept="image/*">
+                    <input type="hidden" id="candidatePhotoPath">
+                    <div id="photoPreview"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="button" onclick="closeModal()">取消</button>
+                    <button type="submit" class="button success">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 快速拍照添加模态框 -->
+    <div id="quickAddModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-header">📱 拍照添加候选人</h2>
+            <form id="quickAddForm">
+                <div class="form-group">
+                    <label>📷 拍摄或选择照片 *</label>
+                    <div class="file-upload" onclick="document.getElementById('quickPhoto').click()">
+                        <div id="quickPhotoPreview">
+                            <p style="font-size: 36px; margin-bottom: 8px;">📸</p>
+                            <p style="font-size: 14px;">点击或拖拽上传照片</p>
+                            <p style="color: #999; font-size: 12px;">支持 JPG、PNG 等格式</p>
+                        </div>
+                    </div>
+                    <input type="file" id="quickPhoto" accept="image/*" capture="environment" onchange="handleQuickPhoto()" style="display:none;">
+                    <input type="hidden" id="quickPhotoPath">
+                </div>
+                <div class="form-group">
+                    <label>⌨️ 输入姓名 *</label>
+                    <input type="text" id="quickName" required placeholder="请输入候选人姓名">
+                </div>
+                <div class="form-group">
+                    <label>📝 描述（可选）</label>
+                    <textarea id="quickDescription" placeholder="可以添加简单描述"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="button" onclick="closeQuickAddModal()">取消</button>
+                    <button type="submit" class="button success">✅ 确认添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="message" class="message"></div>
+    
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <!-- 标签页切换函数 - 确保在HTML加载时可用 -->
+    <script>
+    function switchTab(tabName) {
+        // 隐藏所有标签内容
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        
+        // 移除所有标签的激活状态
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // 显示选中的标签内容
+        const activeContent = document.getElementById(tabName);
+        if (activeContent) {
+            activeContent.classList.add('active');
+        }
+        
+        // 激活选中的标签
+        const activeTab = document.querySelector(`.tab[onclick*="${tabName}"]`);
+        if (activeTab) {
+            activeTab.classList.add('active');
+        }
+        
+        console.log('切换到标签页:', tabName);
+    }
+    
+    // 密码显示/隐藏切换
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        const type = input.type === 'password' ? 'text' : 'password';
+        input.type = type;
+    }
+    
+    // 重置投票函数 - 确保在HTML加载时可用
+    function resetVotes() {
+        if (!confirm('确定要重置所有投票数据吗？此操作不可恢复！')) {
+            return;
+        }
+        
+        fetch('/api/admin/votes/reset', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('投票数据重置成功！');
+                refreshData(); // 刷新数据
+            } else {
+                alert('重置失败：' + (data.message || '未知错误'));
+            }
+        })
+        .catch(error => {
+            console.error('重置投票失败:', error);
+            alert('重置失败：网络错误');
+        });
+    }
+    </script>
+    
+    <script src="/admin/script.js"></script>
+    
+    <!-- 版权信息 -->
+    <div style="text-align: center; padding: 20px; color: #666; font-size: 12px; margin-top: 20px;">
+        <p>© 2025 开发者赵宏宇版权所有</p>
+    </div>
+</body>
+</html>

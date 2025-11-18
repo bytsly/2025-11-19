@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拍照添加测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            background: #f9f9f9;
+            border-color: #764ba2;
+        }
+        
+        .upload-area.active {
+            background: #f0f0ff;
+            border-color: #4CAF50;
+        }
+        
+        .icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .preview {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .preview img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .button:active {
+            transform: translateY(0);
+        }
+        
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .message.show {
+            display: block;
+        }
+        
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .info p {
+            margin: 5px 0;
+            color: #333;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 拍照添加候选人测试</h1>
+        
+        <div class="info">
+            <p>✅ 支持手机拍照</p>
+            <p>✅ 支持相册选择</p>
+            <p>✅ 实时预览</p>
+            <p>✅ 快速录入</p>
+        </div>
+        
+        <div id="message" class="message"></div>
+        
+        <form id="testForm">
+            <!-- 上传区域 -->
+            <div class="upload-area" onclick="document.getElementById('photoInput').click()">
+                <div id="uploadContent">
+                    <div class="icon">📸</div>
+                    <p style="font-size: 16px; color: #333;">点击拍照或选择图片</p>
+                    <p style="font-size: 14px; color: #999; margin-top: 10px;">支持 JPG、PNG 等格式</p>
+                </div>
+            </div>
+            <input type="file" id="photoInput" accept="image/*" capture="environment">
+            
+            <!-- 姓名输入 -->
+            <div class="form-group">
+                <label>⌨️ 候选人姓名 *</label>
+                <input type="text" id="nameInput" required placeholder="请输入姓名">
+            </div>
+            
+            <!-- 描述输入 -->
+            <div class="form-group">
+                <label>📝 描述（可选）</label>
+                <textarea id="descInput" placeholder="可以添加简单描述"></textarea>
+            </div>
+            
+            <!-- 提交按钮 -->
+            <button type="submit" class="button" id="submitBtn" disabled>
+                ✅ 确认添加
+            </button>
+        </form>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="/admin" style="color: #667eea; text-decoration: none;">← 返回管理后台</a>
+        </div>
+    </div>
+    
+    <script>
+        const photoInput = document.getElementById('photoInput');
+        const uploadContent = document.getElementById('uploadContent');
+        const uploadArea = document.querySelector('.upload-area');
+        const nameInput = document.getElementById('nameInput');
+        const descInput = document.getElementById('descInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const messageDiv = document.getElementById('message');
+        
+        let uploadedPhotoPath = '';
+        
+        // 监听文件选择
+        photoInput.addEventListener('change', handleFileSelect);
+        
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // 显示预览
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadContent.innerHTML = `
+                    <img src="${e.target.result}" style="max-width: 100%; max-height: 200px; border-radius: 10px;">
+                    <p style="color: #4CAF50; margin-top: 10px;">📤 正在上传...</p>
+                `;
+                uploadArea.classList.add('active');
+            };
+            reader.readAsDataURL(file);
+            
+            // 上传文件
+            uploadPhoto(file);
+        }
+        
+        function uploadPhoto(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            fetch('/api/admin/upload/photo', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    uploadedPhotoPath = data.data.path;
+                    uploadContent.innerHTML = `
+                        <img src="${data.data.path}" style="max-width: 100%; max-height: 200px; border-radius: 10px;">
+                        <p style="color: #4CAF50; margin-top: 10px;">✅ 上传成功！</p>
+                    `;
+                    submitBtn.disabled = false;
+                    nameInput.focus();
+                    showMessage('照片上传成功，请输入姓名', 'success');
+                } else {
+                    showMessage(data.message || '上传失败', 'error');
+                    uploadContent.innerHTML = `
+                        <div class="icon">📸</div>
+                        <p style="font-size: 16px; color: #333;">点击拍照或选择图片</p>
+                        <p style="color: red; margin-top: 10px;">❌ ${data.message || '上传失败'}</p>
+                    `;
+                    uploadArea.classList.remove('active');
+                }
+            })
+            .catch(error => {
+                console.error('上传失败:', error);
+                showMessage('上传失败，请重试', 'error');
+                uploadContent.innerHTML = `
+                    <div class="icon">📸</div>
+                    <p style="font-size: 16px; color: #333;">点击拍照或选择图片</p>
+                    <p style="color: red; margin-top: 10px;">❌ 上传失败</p>
+                `;
+                uploadArea.classList.remove('active');
+            });
+        }
+        
+        // 表单提交
+        document.getElementById('testForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!uploadedPhotoPath) {
+                showMessage('请先上传照片', 'error');
+                return;
+            }
+            
+            const formData = {
+                name: nameInput.value.trim(),
+                description: descInput.value.trim(),
+                photo_url: uploadedPhotoPath
+            };
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ 添加中...';
+            
+            fetch('/api/admin/candidates', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(`✅ 添加成功！候选人：${formData.name}`, 'success');
+                    // 重置表单
+                    setTimeout(() => {
+                        document.getElementById('testForm').reset();
+                        uploadedPhotoPath = '';
+                        uploadContent.innerHTML = `
+                            <div class="icon">📸</div>
+                            <p style="font-size: 16px; color: #333;">点击拍照或选择图片</p>
+                            <p style="font-size: 14px; color: #999; margin-top: 10px;">支持 JPG、PNG 等格式</p>
+                        `;
+                        uploadArea.classList.remove('active');
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = '✅ 确认添加';
+                    }, 2000);
+                } else {
+                    showMessage(data.message || '添加失败', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = '✅ 确认添加';
+                }
+            })
+            .catch(error => {
+                console.error('添加失败:', error);
+                showMessage('添加失败，请重试', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '✅ 确认添加';
+            });
+        });
+        
+        function showMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type} show`;
+            setTimeout(() => {
+                messageDiv.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+    
+    <!-- 版权信息 -->
+    <div style="text-align: center; padding: 20px; color: #666; font-size: 12px; margin-top: 20px;">
+        <p>© 2025 开发者赵宏宇版权所有</p>
+    </div>
+</body>
+</html>

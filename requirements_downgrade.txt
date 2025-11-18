@@ -1,0 +1,14 @@
+Flask==2.3.3
+Flask-SocketIO==5.3.6
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy==2.0.35
+eventlet==0.33.3
+pandas==2.3.3
+numpy==1.26.4  # 降级到1.x版本
+openpyxl==3.1.2
+Pillow==12.0.0
+qrcode==7.4.2
+pywin32==311
+python-dotenv==1.0.0
+dnspython==2.4.2
+opencv-python==4.9.0.80

@@ -1,0 +1,64 @@
+如何为GUI程序添加图标
+========================
+
+本系统已支持自定义图标，按以下步骤操作：
+
+1. 准备图标文件
+   - 文件名：icon.ico
+   - 格式：Windows ICO格式
+   - 推荐尺寸：256x256, 128x128, 64x64, 48x48, 32x32, 16x16（多尺寸）
+   - 工具推荐：
+     * 在线转换：https://convertio.co/zh/png-ico/
+     * 本地工具：IcoFX, GIMP
+
+2. 放置图标文件
+   将 icon.ico 文件放到项目根目录：
+   
+   投票抽奖系统/
+   ├── icon.ico          ← 这里
+   ├── gui_app.py
+   ├── run.py
+   └── ...
+
+3. 重新打包
+   运行：打包exe.bat
+   
+   打包后，生成的exe文件会自动使用这个图标
+
+4. 验证
+   - 查看 dist\投票抽奖系统\投票抽奖系统.exe 的图标
+   - 运行程序，查看窗口左上角和任务栏图标
+
+注意事项
+========
+
+1. 如果没有 icon.ico 文件，程序使用默认的 tkinter 图标（不影响功能）
+
+2. 图标文件大小建议不超过 1MB
+
+3. 图标设计建议：
+   - 简洁明了
+   - 与投票抽奖主题相关
+   - 在小尺寸下依然清晰
+   - 使用鲜明的颜色
+
+4. 常见图标主题：
+   - 投票箱 🗳️
+   - 抽奖转盘 🎰
+   - 礼物盒 🎁
+   - 彩票 🎫
+   - 奖杯 🏆
+
+示例图标资源
+============
+
+免费图标网站：
+- Iconfinder: https://www.iconfinder.com/
+- Flaticon: https://www.flaticon.com/
+- Icons8: https://icons8.com/
+
+在线制作：
+- Canva: https://www.canva.com/
+- Figma: https://www.figma.com/
+
+提示：搜索关键词 "voting", "lottery", "ballot", "prize"
